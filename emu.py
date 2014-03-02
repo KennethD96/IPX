@@ -1,10 +1,8 @@
 #encoding: utf-8
 from __future__ import division
 
-from bones.bot import Module
 import bones.bot
 import bones.event
-from keys import PressKey, ReleaseKey
 
 from subprocess import Popen, PIPE
 from twisted.internet import reactor
@@ -20,25 +18,17 @@ load_at_startup = True
 
 mod_admins = ["KennethD", "_404`d"]
 
-keys = {
-    "down": 0x28,
-    "right": 0x27,
-    "up": 0x26,
-    "left": 0x25,
-    "a": 0x53,
-    "b": 0x41,
-#    "a": 0x5A,
-#    "b": 0x58,
-    "start": 0x0D,
-    "select": 0x08,
-}
-keyDelay = (1000/59.97)/1000
-
 ##########################################
 
 module_path = path.dirname(__file__)
 emu_path = path.join(module_path, "emulators")
 rom_path = path.join(module_path, "roms")
+
+if not path.exists(emu_path):
+    path.mkdir(emu_path)
+if not path.exists(rom_path):
+    path.mkdir(rom_path)
+
 input_enabled = False
 if load_at_startup:
     input_enabled = True
@@ -49,9 +39,9 @@ def isrunning(proc):
     except:
         return 0
 
-class emucontrol(Module):
+class emucontrol(bones.bot.Module):
     def __init__(self, *args, **kwargs):
-        Module.__init__(self, *args, **kwargs)
+        bones.bot.Module.__init__(self, *args, **kwargs)
         self.active_emu = path.join(emu_path, default_emu)
         self.active_rom = path.join(rom_path, default_rom)
         if load_at_startup:
@@ -139,38 +129,3 @@ class emucontrol(Module):
             
             if success == True:
                 event.channel.msg("Changes applied successfully")
-
-class emuinput(Module):
-    def __init__(self, *args, **kwargs):
-        bones.bot.Module.__init__(self, *args, **kwargs)
-        global input_enabled
-        self.mutedUsers = {}
-        self.keyQueue = []
-        #reactor.callLater(0.0, reactor.callInThread, self.keyAgent)
-
-    @bones.event.handler(event=bones.event.UserJoinEvent)
-    def voiceUser(self, event):
-        if ("%s@%s" % (event.user.username, event.user.hostname)) not in self.mutedUsers:
-            event.client.mode(event.channel.name, True, "v", user=event.user.nickname)
-    
-    @bones.event.handler(event=bones.event.PrivmsgEvent)
-    def parseMessage(self, event):
-        if input_enabled == True and event.msg.lower() in ["select", "start", "down", "up", "left", "right", "a", "b"]:
-            key = event.msg.lower()
-            PressKey(keys[key])
-            time.sleep(keyDelay)
-            ReleaseKey(keys[key])
-            PressKey(keys[key])
-            time.sleep(keyDelay)
-            ReleaseKey(keys[key])
-            bones.bot.log.debug("Sent %s, %s" % (key, keys[key]))
-            self.keyQueue.append(event.msg.lower())
-     
-    def keyAgent(self):
-        while True:
-            if len(self.keyQueue) > 0:
-                key = self.keyQueue.pop(0)
-                PressKey(keys[key])
-                time.sleep(keyDelay)
-                ReleaseKey(keys[key])
-                bones.bot.log.debug("Sent %s, %s" % (key, keys[key]))
