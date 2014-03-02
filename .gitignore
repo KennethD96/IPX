@@ -1,15 +1,8 @@
 # Emulator related
-
-*.exe
-emulators/*.ini
+/emulators
 
 # ROM related
-
-*.gb
-*.gba
-
-*.sav
-*.sn*
+/roms
 
 # Python
 *.pyc
