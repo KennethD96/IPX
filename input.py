@@ -10,23 +10,23 @@ from keys import PressKey, ReleaseKey
 import emu
 
 class GenericBGBInput(bones.bot.Module):
+    keys = {
+        "down": 0x28,
+        "right": 0x27,
+        "up": 0x26,
+        "left": 0x25,
+        "a": 0x53,
+        "b": 0x41,
+        "start": 0x0D,
+        "select": 0x08,
+    }
+    keyDelay = (1000/59.97)/1000
+
     def __init__(self, *args, **kwargs):
         bones.bot.Module.__init__(self, *args, **kwargs)
         self.mutedUsers = {}
         self.keyQueue = []
         #reactor.callLater(0.0, reactor.callInThread, self.keyAgent)
-	
-    keys = {
-	    "down": 0x28,
-	    "right": 0x27,
-	    "up": 0x26,
-	    "left": 0x25,
-	    "a": 0x53,
-	    "b": 0x41,
-	    "start": 0x0D,
-	    "select": 0x08,
-	}
-	keyDelay = (1000/59.97)/1000
 
     @bones.event.handler(event=bones.event.UserJoinEvent)
     def voiceUser(self, event):
