@@ -16,7 +16,7 @@ import re
 
 default_emu = "bgb.exe"
 default_rom = "Pokemon Yellow.gb"
-load_at_startup = False
+load_at_startup = True
 
 mod_admins = ["KennethD", "_404`d"]
 
@@ -40,6 +40,8 @@ module_path = path.dirname(__file__)
 emu_path = path.join(module_path, "emulators")
 rom_path = path.join(module_path, "roms")
 input_enabled = False
+if load_at_startup:
+    input_enabled = True
 
 def isrunning(proc):
     try:
@@ -58,6 +60,7 @@ class emucontrol(Module):
 
     @bones.event.handler(trigger="emustart")
     def emustart(self, event):
+        global input_enabled
         if event.user.nickname in mod_admins:
             rom = self.active_rom
             if len(event.args) > 0:
@@ -66,12 +69,14 @@ class emucontrol(Module):
                     rom = newpath
                     self.em.kill()
                     self.em = Popen([self.active_emu, rom])
+                    input_enabled = True
                     event.channel.msg("Emulator started with rom " + rom)
                 else:
                     event.channel.msg("ROM does not exist")
             else:
                 if isrunning(self.em) != None:
                     self.em = Popen([self.active_emu, rom])
+                    input_enabled = True
                     event.channel.msg("Emulator initiated")
                 else:
                     event.channel.msg("Emulator already running")
@@ -86,6 +91,7 @@ class emucontrol(Module):
 
     @bones.event.handler(trigger="emustop")
     def emustop(self, event):
+        global input_enabled
         if event.user.nickname in mod_admins:
             if isrunning(self.em) == None:
                 input_enabled = False
