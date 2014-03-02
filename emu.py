@@ -18,20 +18,6 @@ load_at_startup = True
 
 mod_admins = ["KennethD", "_404`d"]
 
-keys = {
-    "down": 0x28,
-    "right": 0x27,
-    "up": 0x26,
-    "left": 0x25,
-    "a": 0x53,
-    "b": 0x41,
-#    "a": 0x5A,
-#    "b": 0x58,
-    "start": 0x0D,
-    "select": 0x08,
-}
-keyDelay = (1000/59.97)/1000
-
 ##########################################
 
 module_path = path.dirname(__file__)
@@ -55,7 +41,7 @@ def isrunning(proc):
 
 class emucontrol(bones.bot.Module):
     def __init__(self, *args, **kwargs):
-        Module.__init__(self, *args, **kwargs)
+        bones.bot.Module.__init__(self, *args, **kwargs)
         self.active_emu = path.join(emu_path, default_emu)
         self.active_rom = path.join(rom_path, default_rom)
         if load_at_startup:

@@ -5,7 +5,9 @@ import time
 
 import bones.bot
 import bones.event
+
 from keys import PressKey, ReleaseKey
+import emu
 
 class GenericBGBInput(bones.bot.Module):
 	keys = {
@@ -22,7 +24,6 @@ class GenericBGBInput(bones.bot.Module):
 
     def __init__(self, *args, **kwargs):
         bones.bot.Module.__init__(self, *args, **kwargs)
-        global input_enabled
         self.mutedUsers = {}
         self.keyQueue = []
         #reactor.callLater(0.0, reactor.callInThread, self.keyAgent)
@@ -34,7 +35,7 @@ class GenericBGBInput(bones.bot.Module):
     
     @bones.event.handler(event=bones.event.PrivmsgEvent)
     def parseMessage(self, event):
-        if input_enabled == True and event.msg.lower() in self.keys:
+        if emu.input_enabled and event.msg.lower() in self.keys:
             key = event.msg.lower()
             PressKey(self.keys[key])
             time.sleep(self.keyDelay)
@@ -47,7 +48,7 @@ class GenericBGBInput(bones.bot.Module):
      
     def keyAgent(self):
         while True:
-            if len(self.keyQueue) > 0:
+            if emu.input_enabled and len(self.keyQueue) > 0:
                 key = self.keyQueue.pop(0)
                 PressKey(self.keys[key])
                 time.sleep(self.keyDelay)
