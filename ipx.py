@@ -43,6 +43,12 @@ rom_path = path.join(module_path, "roms")
 active_emu = default_emu
 active_rom = default_rom
 
+def isrunning(proc):
+    try:
+        return proc.poll()
+    except:
+        return 0
+
 class emucontrol(Module):
     def __init__(self, *args, **kwargs):
         Module.__init__(self, *args, **kwargs)
@@ -51,12 +57,6 @@ class emucontrol(Module):
         if load_at_startup:
             self.em = Popen([self.active_emu, self.active_rom])
         self.em = None
-
-    def isrunning(proc):
-        try:
-            return proc.poll()
-        except:
-            return 0
 
     @bones.event.handler(trigger="emustart")
     def emustart(self, event):
