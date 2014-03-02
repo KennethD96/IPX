@@ -17,7 +17,6 @@ import re
 default_emu = "bgb.exe"
 default_rom = "Pokemon Yellow.gb"
 load_at_startup = False
-input_enabled = True
 
 mod_admins = ["KennethD", "_404`d"]
 
@@ -40,8 +39,7 @@ keyDelay = (1000/59.97)/1000
 module_path = path.dirname(__file__)
 emu_path = path.join(module_path, "emulators")
 rom_path = path.join(module_path, "roms")
-active_emu = default_emu
-active_rom = default_rom
+input_enabled = False
 
 def isrunning(proc):
     try:
@@ -52,8 +50,8 @@ def isrunning(proc):
 class emucontrol(Module):
     def __init__(self, *args, **kwargs):
         Module.__init__(self, *args, **kwargs)
-        self.active_emu = path.join(emu_path, active_emu)
-        self.active_rom = path.join(rom_path, active_rom)
+        self.active_emu = path.join(emu_path, default_emu)
+        self.active_rom = path.join(rom_path, default_rom)
         if load_at_startup:
             self.em = Popen([self.active_emu, self.active_rom])
         self.em = None
@@ -90,6 +88,7 @@ class emucontrol(Module):
     def emustop(self, event):
         if event.user.nickname in mod_admins:
             if isrunning(self.em) == None:
+                input_enabled = False
                 self.em.kill()
                 event.channel.msg("Emulator killed")
             else:
@@ -111,15 +110,17 @@ class emucontrol(Module):
             if len(event.args) > 0:
                 
                 if event.args[0].lower() == "emu":
-                    if path.exists(path.join(emu_path, " ".join(event.args[1:]))):
-                        active_emu = event.args[1]
+                    newpath = path.join(emu_path, " ".join(event.args[1:]))
+                    if path.exists(newpath):
+                        self.active_emu = newpath
                     else:
                         event.channel.msg("Emulator does not exist, changes ignored")
                         success = False
 
                 if event.args[0].lower() == "rom":
-                    if path.exists(path.join(rom_path, " ".join(event.args[1:]))):
-                        active_rom = event.args[1]
+                    newpath = path.join(rom_path, " ".join(event.args[1:]))
+                    if path.exists(newpath):
+                        self.active_rom = newpath
                     else:
                         event.channel.msg("ROM does not exist, changes ignored")
                         success = False
