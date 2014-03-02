@@ -19,6 +19,7 @@ keys = {
     "start": 0x0D,
     "select": 0x08,
 }
+keyDelay = (1000/59.97)/1000
     
 class IRCPlaysPokemon(bones.bot.Module):
     def __init__(self, *args, **kwargs):
@@ -37,10 +38,10 @@ class IRCPlaysPokemon(bones.bot.Module):
         if event.msg.lower() in ["select", "start", "down", "up", "left", "right", "a", "b"]:
             key = event.msg.lower()
             PressKey(keys[key])
-            time.sleep((1000/59.97)/1000)
+            time.sleep(keyDelay)
             ReleaseKey(keys[key])
             PressKey(keys[key])
-            time.sleep((1000/59.97)/1000)
+            time.sleep(keyDelay)
             ReleaseKey(keys[key])
             bones.bot.log.debug("Sent %s, %s" % (key, keys[key]))
             self.keyQueue.append(event.msg.lower())
@@ -50,7 +51,7 @@ class IRCPlaysPokemon(bones.bot.Module):
             if len(self.keyQueue) > 0:
                 key = self.keyQueue.pop(0)
                 PressKey(keys[key])
-                time.sleep((1000/59.97)/1000)
+                time.sleep(keyDelay)
                 ReleaseKey(keys[key])
                 bones.bot.log.debug("Sent %s, %s" % (key, keys[key]))
                 
