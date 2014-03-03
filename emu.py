@@ -44,9 +44,9 @@ class emucontrol(bones.bot.Module):
         bones.bot.Module.__init__(self, *args, **kwargs)
         self.active_emu = path.join(emu_path, default_emu)
         self.active_rom = path.join(rom_path, default_rom)
+        self.em = None
         if load_at_startup:
             self.em = Popen([self.active_emu, self.active_rom])
-        self.em = None
 
     @bones.event.handler(trigger="emustart")
     def emustart(self, event):
