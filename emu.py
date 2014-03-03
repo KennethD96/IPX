@@ -7,6 +7,13 @@ import bones.event
 from subprocess import Popen, PIPE
 from twisted.internet import reactor
 from os import path
+
+try:
+    import psutil
+    psutil_available = True
+except:
+    psutil_available = False
+
 import time
 import re
 
@@ -33,25 +40,40 @@ input_enabled = False
 if load_at_startup:
     input_enabled = True
 
-def isrunning(proc):
-    try:
-        return proc.poll()
-    except:
-        return 0
-
 class emucontrol(bones.bot.Module):
     def __init__(self, *args, **kwargs):
         bones.bot.Module.__init__(self, *args, **kwargs)
         self.active_emu = path.join(emu_path, default_emu)
         self.active_rom = path.join(rom_path, default_rom)
         self.em = None
+        self.em_p = None
         if load_at_startup:
             self.emustart(self.active_emu, self.active_rom)
 
     def emustart(self, emu, rom):
         self.em = Popen([emu, rom])
+        if psutil_available:
+            self.em_p = psutil.Process(self.em.pid)
         with open(path.join(emu_path, "emu.pid"), "w") as pidfile:
-            pidfile.write(str(self.em.pid))
+            pid_out = self.em.pid
+            if psutil_available:
+                pid_out = str(self.em_p.pid) + "\n" + self.em_p.name
+            pidfile.write(str(pid_out))
+
+    def killemu(self):
+        if psutil_available:
+            self.em_p.terminate()
+        else:
+            self.em.kill()
+
+    def isrunning(self, proc):
+        try:
+            if proc.poll() == None:
+                return True
+            else:
+                return False
+        except:
+            return False
 
     @bones.event.handler(trigger="emustart")
     def cmdemustart(self, event):
@@ -62,8 +84,8 @@ class emucontrol(bones.bot.Module):
                 newpath = path.join(rom_path, " ".join(event.args))
                 rom = newpath
                 if path.exists(newpath):
-                    if isrunning(self.em) == None:
-                        self.em.kill()
+                    if self.isrunning(self.em):
+                        self.killemu()
                     try:
                         self.emustart(self.active_emu, rom)
                         event.channel.msg("Emulator loaded with ROM '%s'" %
@@ -74,7 +96,7 @@ class emucontrol(bones.bot.Module):
                 else:
                     event.channel.msg("ROM does not exist")
             else:
-                if isrunning(self.em) != None:
+                if not self.isrunning(self.em):
                     try:
                         self.emustart(self.active_emu, rom)
                         input_enabled = True
@@ -87,8 +109,8 @@ class emucontrol(bones.bot.Module):
     @bones.event.handler(trigger="emurestart")
     def emurestart(self, event):
         if event.user.nickname in mod_admins:
-            if isrunning(self.em) == None:
-                self.em.kill()
+            if self.isrunning(self.em):
+                self.killemu()
             try:
                 self.emustart(self.active_emu, self.active_rom)
                 event.channel.msg("Emulator restarted")
@@ -99,9 +121,9 @@ class emucontrol(bones.bot.Module):
     def emustop(self, event):
         global input_enabled
         if event.user.nickname in mod_admins:
-            if isrunning(self.em) == None:
+            if self.isrunning(self.em):
                 input_enabled = False
-                self.em.kill()
+                self.killemu()
                 event.channel.msg("Emulator killed")
             else:
                 event.channel.msg("Emulator not running")
@@ -109,7 +131,7 @@ class emucontrol(bones.bot.Module):
     @bones.event.handler(trigger="emudebug")
     def emudebug(self, event):
         if event.user.nickname in mod_admins:
-            if isrunning(self.em) == None:
+            if self.isrunning(self.em):
                 event.channel.msg("Emulator running on PID " + str(self.em.pid))
             else:
                 event.channel.msg("Emulator not running")
