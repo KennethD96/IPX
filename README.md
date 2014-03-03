@@ -6,7 +6,7 @@ IPX
 
 ## Requirements
 - [Bones IRC Bot][bones] from the `feature/docs-and-cleanup` branch
-- For `ipx.IRCPlaysPokemon`: Windows
+- For `input.GenericBGBInput`: Windows
 - A emulator; We recommend [BGB][bgb]
 
 [bones]: https://github.com/404d/Bones-IRCBot
