@@ -46,28 +46,41 @@ class emucontrol(bones.bot.Module):
         self.active_rom = path.join(rom_path, default_rom)
         self.em = None
         if load_at_startup:
-            self.em = Popen([self.active_emu, self.active_rom])
+            self.emustart(self.active_emu, self.active_rom)
+
+    def emustart(self, emu, rom):
+        self.em = Popen([emu, rom])
+        with open(path.join(emu_path, "emu.pid"), "w") as pidfile:
+            pidfile.write(str(self.em.pid))
 
     @bones.event.handler(trigger="emustart")
-    def emustart(self, event):
+    def cmdemustart(self, event):
         global input_enabled
         if event.user.nickname in mod_admins:
             rom = self.active_rom
             if len(event.args) > 0:
                 newpath = path.join(rom_path, " ".join(event.args))
+                rom = newpath
                 if path.exists(newpath):
-                    rom = newpath
-                    self.em.kill()
-                    self.em = Popen([self.active_emu, rom])
-                    input_enabled = True
-                    event.channel.msg("Emulator started with rom " + rom)
+                    if isrunning(self.em) == None:
+                        self.em.kill()
+                    try:
+                        self.emustart(self.active_emu, rom)
+                        event.channel.msg("Emulator loaded with ROM '%s'" %
+                        " ".join(event.args))
+                        input_enabled = True
+                    except:
+                        event.channel.msg("Could not load emulator")
                 else:
                     event.channel.msg("ROM does not exist")
             else:
                 if isrunning(self.em) != None:
-                    self.em = Popen([self.active_emu, rom])
-                    input_enabled = True
-                    event.channel.msg("Emulator initiated")
+                    try:
+                        self.emustart(self.active_emu, rom)
+                        input_enabled = True
+                        event.channel.msg("Emulator initiated")
+                    except:
+                        event.channel.msg("Could not load emulator")
                 else:
                     event.channel.msg("Emulator already running")
 
@@ -76,8 +89,11 @@ class emucontrol(bones.bot.Module):
         if event.user.nickname in mod_admins:
             if isrunning(self.em) == None:
                 self.em.kill()
-            self.em = Popen([self.active_emu, self.active_rom])
-            event.channel.msg("Emulator restarted")
+            try:
+                self.emustart(self.active_emu, self.active_rom)
+                event.channel.msg("Emulator restarted")
+            except:
+                event.channel.msg("Could not restart emulator")
 
     @bones.event.handler(trigger="emustop")
     def emustop(self, event):
