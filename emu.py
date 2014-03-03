@@ -121,21 +121,32 @@ class emucontrol(bones.bot.Module):
             success = True
             if len(event.args) > 0:
                 
+                default_options = {
+                    "emu":path.join(emu_path, default_emu),
+                    "rom":path.join(rom_path, default_rom),
+                }
+
                 if event.args[0].lower() == "emu":
-                    newpath = path.join(emu_path, " ".join(event.args[1:]))
-                    if path.exists(newpath):
-                        self.active_emu = newpath
+                    if event.args[1].lower() == "reset":
+                        self.active_emu = default_options["emu"]
                     else:
-                        event.channel.msg("Emulator does not exist, changes ignored")
-                        success = False
+                        newpath = path.join(emu_path, " ".join(event.args[1:]))
+                        if path.exists(newpath):
+                            self.active_emu = newpath
+                        else:
+                            event.channel.msg("Emulator does not exist, changes ignored")
+                            success = False
 
                 if event.args[0].lower() == "rom":
-                    newpath = path.join(rom_path, " ".join(event.args[1:]))
-                    if path.exists(newpath):
-                        self.active_rom = newpath
+                    if event.args[1].lower() == "reset":
+                        self.active_rom = default_options["rom"]
                     else:
-                        event.channel.msg("ROM does not exist, changes ignored")
-                        success = False
+                        newpath = path.join(rom_path, " ".join(event.args[1:]))
+                        if path.exists(newpath):
+                            self.active_rom = newpath
+                        else:
+                            event.channel.msg("ROM does not exist, changes ignored")
+                            success = False
 
                 if event.args[0].lower() == "input":
                     if event.args[1].lower() == "true":
