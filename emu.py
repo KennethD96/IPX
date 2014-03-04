@@ -59,7 +59,7 @@ class emucontrol(bones.bot.Module):
                 except:
                         self.em_pid = []
                         self.em = None
-        
+
         if load_at_startup and not self.isrunning(self.em):
             self.emustart(active_emu, active_rom)
 
@@ -73,7 +73,7 @@ class emucontrol(bones.bot.Module):
             self.em_pid = [str(self.em.pid), self.em.name]
         else:
             self.em_pid = [str(self.em.pid), emu[1]]
-        
+
         with open(self.pid_file, "w") as pidfile:
             pidfile.write("\n".join(self.em_pid))
         input_enabled = True
@@ -161,7 +161,7 @@ class emuset(bones.bot.Module):
         if event.user.nickname in mod_admins:
             success = True
             if len(event.args) > 0:
-                
+
                 default_options = {
                     "emu":[path.join(emu_path, default_emu), default_emu],
                     "rom":path.join(rom_path, default_rom),
@@ -195,7 +195,7 @@ class emuset(bones.bot.Module):
                         input_enabled = True
                     elif event.args[1].lower() == "false":
                         input_enabled = False
-            
+
             if success == True:
                 event.channel.msg("Changes applied successfully")
 

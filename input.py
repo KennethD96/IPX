@@ -32,7 +32,7 @@ class GenericBGBInput(bones.bot.Module):
     def voiceUser(self, event):
         if ("%s@%s" % (event.user.username, event.user.hostname)) not in self.mutedUsers:
             event.client.mode(event.channel.name, True, "v", user=event.user.nickname)
-    
+
     @bones.event.handler(event=bones.event.PrivmsgEvent)
     def parseMessage(self, event):
         if emu.input_enabled and event.msg.lower() in self.keys:
@@ -45,7 +45,7 @@ class GenericBGBInput(bones.bot.Module):
             ReleaseKey(self.keys[key])
             bones.bot.log.debug("Sent %s, %s" % (key, self.keys[key]))
             self.keyQueue.append(event.msg.lower())
-     
+
     def keyAgent(self):
         while True:
             if emu.input_enabled and len(self.keyQueue) > 0:
@@ -54,3 +54,4 @@ class GenericBGBInput(bones.bot.Module):
                 time.sleep(self.keyDelay)
                 ReleaseKey(self.keys[key])
                 bones.bot.log.debug("Sent %s, %s" % (key, self.keys[key]))
+
