@@ -11,14 +11,15 @@ import emu
 
 class GenericBGBInput(bones.bot.Module):
     keys = {
-        "down": 0x28,
-        "right": 0x27,
-        "up": 0x26,
-        "left": 0x25,
-        "a": 0x53,
-        "b": 0x41,
-        "start": 0x0D,
-        "select": 0x08,
+        # 0x30 - 0x39 == 0 - 9
+        "b": 0x31,
+        "a": 0x32,
+        "start": 0x33,
+        "select": 0x34,
+        "left": 0x37,
+        "down": 0x38,
+        "up": 0x39,
+        "right": 0x30,
     }
     keyDelay = (1000/59.97)/1000
 
