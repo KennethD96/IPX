@@ -198,3 +198,14 @@ class emuset(bones.bot.Module):
             
             if success == True:
                 event.channel.msg("Changes applied successfully")
+
+    @bones.event.handler(trigger="toggleinput")
+    def toggleinput(self, event):
+        global input_enabled
+        if event.user.nickname in mod_admins:
+            if input_enabled == False:
+                input_enabled = True
+                event.channel.msg("Input enabled")
+            elif input_enabled == True:
+                input_enabled = False
+                event.channel.msg("Input disabled")
