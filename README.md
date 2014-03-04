@@ -12,7 +12,7 @@ IPX
 [bones]: https://github.com/404d/Bones-IRCBot
 [bgb]: http://bgb.bircd.org/
 
-## Optional
+### Optional
 - [psutil][psutil] for resumed emulator-control between sessions
 
 [psutil]:https://code.google.com/p/psutil/
