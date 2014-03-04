@@ -9,7 +9,7 @@ from os import path
 try:
     import psutil
     psutil_available = True
-except:
+except ImportError:
     psutil_available = False
 
 import time
@@ -41,8 +41,8 @@ if load_at_startup:
 class emucontrol(bones.bot.Module):
     def __init__(self, *args, **kwargs):
         bones.bot.Module.__init__(self, *args, **kwargs)
-        self.active_emu = path.join(emu_path, default_emu)
-        self.active_rom = path.join(rom_path, default_rom)
+        self.active_emu = default_emu
+        self.active_rom = default_rom
         self.pid_file = path.join(emu_path, "emu.pid")
         self.em_pid = []
         self.em = None
@@ -64,22 +64,31 @@ class emucontrol(bones.bot.Module):
             self.emustart(self.active_emu, self.active_rom)
 
     def emustart(self, emu, rom):
+        global input_enabled
+        if self.isrunning(self.em):
+            self.killemu(self.em)
+        self.em = Popen([
+            path.join(emu_path, default_emu),
+            path.join(rom_path, default_rom)
+        ])
+
         if psutil_available:
-            self.em = Popen([emu, rom])
             self.em = psutil.Process(self.em.pid)
             self.em_pid = [str(self.em.pid), self.em.name]
         else:
-            self.em = Popen([emu, rom])
-            self.em_pid = [str(self.em.pid)]
+            self.em_pid = [str(self.em.pid), self.active_emu]
         
         with open(self.pid_file, "w") as pidfile:
             pidfile.write("\n".join(self.em_pid))
+        input_enabled = True
 
     def killemu(self, proc):
+        global input_enabled
         if psutil_available:
             proc.terminate()
         else:
             proc.kill()
+        input_enabled = False
 
     def isrunning(self, proc):
         try:
@@ -96,20 +105,16 @@ class emucontrol(bones.bot.Module):
 
     @bones.event.handler(trigger="emustart")
     def cmdemustart(self, event):
-        global input_enabled
         if event.user.nickname in mod_admins:
             rom = self.active_rom
             if len(event.args) > 0:
                 newpath = path.join(rom_path, " ".join(event.args))
                 rom = newpath
                 if path.exists(newpath):
-                    if self.isrunning(self.em):
-                        self.killemu(self.em)
                     try:
                         self.emustart(self.active_emu, rom)
                         event.channel.msg("Emulator loaded with ROM '%s'" %
                         " ".join(event.args))
-                        input_enabled = True
                     except:
                         event.channel.msg("Could not load emulator")
                 else:
@@ -118,7 +123,6 @@ class emucontrol(bones.bot.Module):
                 if not self.isrunning(self.em):
                     try:
                         self.emustart(self.active_emu, rom)
-                        input_enabled = True
                         event.channel.msg("Emulator initiated")
                     except:
                         event.channel.msg("Could not load emulator")
@@ -128,8 +132,6 @@ class emucontrol(bones.bot.Module):
     @bones.event.handler(trigger="emurestart")
     def emurestart(self, event):
         if event.user.nickname in mod_admins:
-            if self.isrunning(self.em):
-                self.killemu(self.em)
             try:
                 self.emustart(self.active_emu, self.active_rom)
                 event.channel.msg("Emulator restarted")
@@ -138,10 +140,8 @@ class emucontrol(bones.bot.Module):
 
     @bones.event.handler(trigger="emustop")
     def emustop(self, event):
-        global input_enabled
         if event.user.nickname in mod_admins:
             if self.isrunning(self.em):
-                input_enabled = False
                 self.killemu(self.em)
                 event.channel.msg("Emulator killed")
             else:
@@ -151,7 +151,7 @@ class emucontrol(bones.bot.Module):
     def emudebug(self, event):
         if event.user.nickname in mod_admins:
             if self.isrunning(self.em):
-                event.channel.msg("Emulator running on PID " + str(self.em_pid[0]))
+                event.channel.msg("Emulator running on PID " + self.em_pid[0])
             else:
                 event.channel.msg("Emulator not running")
 
