@@ -28,8 +28,6 @@ mod_admins = ["KennethD", "_404`d"]
 module_path = path.dirname(__file__)
 emu_path = path.join(module_path, "emulators")
 rom_path = path.join(module_path, "roms")
-active_rom = path.join(rom_path, default_rom)
-active_emu = [path.join(emu_path, default_emu), default_emu]
 
 if not path.exists(emu_path):
     path.mkdir(emu_path)
@@ -41,6 +39,10 @@ if load_at_startup:
     input_enabled = True
 
 class emucontrol(bones.bot.Module):
+
+    active_rom = path.join(rom_path, default_rom)
+    active_emu = [path.join(emu_path, default_emu), default_emu]
+
     def __init__(self, *args, **kwargs):
         bones.bot.Module.__init__(self, *args, **kwargs)
         self.pid_file = path.join(emu_path, "emu.pid")
@@ -61,7 +63,7 @@ class emucontrol(bones.bot.Module):
                         self.em = None
 
         if load_at_startup and not self.isrunning(self.em):
-            self.emustart(active_emu, active_rom)
+            self.emustart(self.active_emu, self.active_rom)
 
     def emustart(self, emu, rom):
         global input_enabled
@@ -102,13 +104,13 @@ class emucontrol(bones.bot.Module):
     @bones.event.handler(trigger="emustart")
     def cmdemustart(self, event):
         if event.user.nickname in mod_admins:
-            rom = active_rom
+            rom = self.active_rom
             if len(event.args) > 0:
                 newpath = path.join(rom_path, " ".join(event.args))
                 rom = newpath
                 if path.exists(newpath):
                     try:
-                        self.emustart(active_emu, rom)
+                        self.emustart(self.active_emu, rom)
                         event.channel.msg("Emulator loaded with ROM '%s'" %
                         " ".join(event.args))
                     except:
@@ -118,7 +120,7 @@ class emucontrol(bones.bot.Module):
             else:
                 if not self.isrunning(self.em):
                     try:
-                        self.emustart(active_emu, rom)
+                        self.emustart(self.active_emu, rom)
                         event.channel.msg("Emulator initiated")
                     except:
                         event.channel.msg("Could not load emulator")
@@ -129,7 +131,7 @@ class emucontrol(bones.bot.Module):
     def emurestart(self, event):
         if event.user.nickname in mod_admins:
             try:
-                self.emustart(active_emu, active_rom)
+                self.emustart(self.active_emu, self.active_rom)
                 event.channel.msg("Emulator restarted")
             except:
                 event.channel.msg("Could not restart emulator")
@@ -157,7 +159,7 @@ class emuset(bones.bot.Module):
 
     @bones.event.handler(trigger="emuset")
     def emuset(self, event):
-        global active_emu, active_rom, input_enabled
+        global input_enabled
         if event.user.nickname in mod_admins:
             success = True
             if len(event.args) > 0:
@@ -169,23 +171,23 @@ class emuset(bones.bot.Module):
 
                 if event.args[0].lower() == "emu":
                     if event.args[1].lower() == "reset":
-                        active_emu = default_options["emu"]
+                        emucontrol.active_emu = default_options["emu"]
                     else:
                         newemu = " ".join(event.args[1:])
                         newpath = path.join(emu_path, newemu)
                         if path.exists(newpath):
-                            active_emu = [newpath, newemu]
+                            emucontrol.active_emu = [newpath, newemu]
                         else:
                             event.channel.msg("Emulator does not exist, changes ignored")
                             success = False
 
                 if event.args[0].lower() == "rom":
                     if event.args[1].lower() == "reset":
-                        active_rom = default_options["rom"]
+                        emucontrol.active_rom = default_options["rom"]
                     else:
                         newpath = path.join(rom_path, " ".join(event.args[1:]))
                         if path.exists(newpath):
-                            active_rom = newpath
+                            emucontrol.active_rom = newpath
                         else:
                             event.channel.msg("ROM does not exist, changes ignored")
                             success = False
