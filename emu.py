@@ -35,8 +35,7 @@ if not path.exists(rom_path):
     path.mkdir(rom_path)
 
 input_enabled = False
-if load_at_startup:
-    input_enabled = True
+input_override = None
 
 class emucontrol(bones.bot.Module):
 
@@ -45,7 +44,7 @@ class emucontrol(bones.bot.Module):
 
     def __init__(self, *args, **kwargs):
         bones.bot.Module.__init__(self, *args, **kwargs)
-        self.pid_file = path.join(emu_path, "emu.pid")
+        self.pid_file = path.join(emu_path, "running.pid")
         self.em_pid = []
         self.em = None
 
@@ -64,6 +63,8 @@ class emucontrol(bones.bot.Module):
 
         if load_at_startup and not self.isrunning(self.em):
             self.emustart(self.active_emu, self.active_rom)
+        if load_at_startup:
+            input_enabled = True
 
     def emustart(self, emu, rom):
         global input_enabled
@@ -203,11 +204,11 @@ class emuset(bones.bot.Module):
 
     @bones.event.handler(trigger="toggleinput")
     def toggleinput(self, event):
-        global input_enabled
+        global input_override
         if event.user.nickname in mod_admins:
-            if input_enabled == False:
-                input_enabled = True
+            if input_override == False:
+                input_override = True
                 event.channel.msg("Input enabled")
-            elif input_enabled == True:
-                input_enabled = False
+            elif input_override == True or input_override == None:
+                input_override = False
                 event.channel.msg("Input disabled")

@@ -35,16 +35,19 @@ class GenericBGBInput(bones.bot.Module):
 
     @bones.event.handler(event=bones.event.PrivmsgEvent)
     def parseMessage(self, event):
-        if emu.input_enabled and event.msg.lower() in self.keys:
-            key = event.msg.lower()
-            PressKey(self.keys[key])
-            time.sleep(self.keyDelay)
-            ReleaseKey(self.keys[key])
-            PressKey(self.keys[key])
-            time.sleep(self.keyDelay)
-            ReleaseKey(self.keys[key])
-            bones.bot.log.debug("Sent %s, %s" % (key, self.keys[key]))
-            self.keyQueue.append(event.msg.lower())
+        if emu.input_override == None or emu.input_override == True:
+            if emu.input_enabled and event.msg.lower() in self.keys:
+                key = event.msg.lower()
+                PressKey(self.keys[key])
+                time.sleep(self.keyDelay)
+                ReleaseKey(self.keys[key])
+                PressKey(self.keys[key])
+                time.sleep(self.keyDelay)
+                ReleaseKey(self.keys[key])
+                self.keyQueue.append(key)
+                bones.bot.log.debug("Sent %s, %s" % (key, self.keys[key]))
+                self.keyQueue.append(event.msg.lower())
+
 
     def keyAgent(self):
         while True:
@@ -54,4 +57,3 @@ class GenericBGBInput(bones.bot.Module):
                 time.sleep(self.keyDelay)
                 ReleaseKey(self.keys[key])
                 bones.bot.log.debug("Sent %s, %s" % (key, self.keys[key]))
-
