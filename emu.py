@@ -70,11 +70,11 @@ class emucontrol(bones.bot.Module):
         global input_enabled
         if self.isrunning(self.em):
             self.killemu(self.em)
-        self.em = Popen([emu[0], rom])
         if psutil_available:
-            self.em = psutil.Process(self.em.pid)
+            self.em = psutil.Popen([emu[0], rom])
             self.em_pid = [str(self.em.pid), self.em.name]
         else:
+            self.em = Popen([emu[0], rom])
             self.em_pid = [str(self.em.pid), emu[1]]
 
         with open(self.pid_file, "w") as pidfile:
@@ -83,22 +83,15 @@ class emucontrol(bones.bot.Module):
 
     def killemu(self, proc):
         global input_enabled
-        if psutil_available:
-            proc.terminate()
-        else:
-            proc.kill()
+        proc.terminate()
         input_enabled = False
 
     def isrunning(self, proc):
         try:
             if psutil_available:
-                proc.status
-                return True
+                return proc.is_running()
             else:
-                if proc.poll() == None:
-                    return True
-                else:
-                    return False
+                return True if proc.poll() == None else False
         except:
             return False
 
@@ -139,12 +132,14 @@ class emucontrol(bones.bot.Module):
 
     @bones.event.handler(trigger="emustop")
     def emustop(self, event):
+        global input_enabled
         if event.user.nickname in mod_admins:
             if self.isrunning(self.em):
                 self.killemu(self.em)
                 event.channel.msg("Emulator killed")
             else:
                 event.channel.msg("Emulator not running")
+                input_enabled = False
 
     @bones.event.handler(trigger="emudebug")
     def emudebug(self, event):
