@@ -26,7 +26,6 @@ class GenericBGBInput(bones.bot.Module):
         bones.bot.Module.__init__(self, *args, **kwargs)
         self.mutedUsers = {}
         self.keyQueue = []
-        #reactor.callLater(0.0, reactor.callInThread, self.keyAgent)
 
     @bones.event.handler(event=bones.event.UserJoinEvent)
     def voiceUser(self, event):
@@ -47,13 +46,3 @@ class GenericBGBInput(bones.bot.Module):
                 self.keyQueue.append(key)
                 bones.bot.log.debug("Sent %s, %s" % (key, self.keys[key]))
                 self.keyQueue.append(event.msg.lower())
-
-
-    def keyAgent(self):
-        while True:
-            if emu.input_enabled and len(self.keyQueue) > 0:
-                key = self.keyQueue.pop(0)
-                PressKey(self.keys[key])
-                time.sleep(self.keyDelay)
-                ReleaseKey(self.keys[key])
-                bones.bot.log.debug("Sent %s, %s" % (key, self.keys[key]))
