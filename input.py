@@ -60,4 +60,4 @@ class GenericBGBInput(bones.bot.Module):
         PressKey(self.keys[key])
         time.sleep(self.keyDelay)
         ReleaseKey(self.keys[key])
-        bones.bot.log.debug("Sent %s, %s" % (key, self.keys[key]))
+        self.log.debug("Sent %s, %s" % (key, self.keys[key]))
