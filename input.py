@@ -16,13 +16,6 @@ class InputBase(bones.bot.Module):
     keyDelay = 0
 
     def __init__(self, *args, **kwargs):
-        """
-        Note to the future @404d:
-        This module requires an API update to be performed. The update in question
-        would be to add the BonesBotFactory instance to the Module during
-        BonesBotFactory.loadModule(). This would need a change to Module.__init__,
-        adding more arguments to the method signature.
-        """
         bones.bot.Module.__init__(self, *args, **kwargs)
         self.log = logging.getLogger(self.__class__)
         for module in self.factory.modules:
@@ -67,6 +60,4 @@ class GenericBGBInput(bones.bot.Module):
         PressKey(self.keys[key])
         time.sleep(self.keyDelay)
         ReleaseKey(self.keys[key])
-        self.keyQueue.append(key)
         bones.bot.log.debug("Sent %s, %s" % (key, self.keys[key]))
-        self.keyQueue.append(event.msg.lower())
