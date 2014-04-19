@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 from __future__ import division
 
+import logging
 import time
 
 import bones.bot
@@ -8,6 +9,43 @@ import bones.event
 
 from keys import PressKey, ReleaseKey
 import emu
+
+
+class InputBase(bones.bot.Module):
+    keys = {}
+    keyDelay = 0
+
+    def __init__(self, *args, **kwargs):
+        """
+        Note to the future @404d:
+        This module requires an API update to be performed. The update in question
+        would be to add the BonesBotFactory instance to the Module during
+        BonesBotFactory.loadModule(). This would need a change to Module.__init__,
+        adding more arguments to the method signature.
+        """
+        bones.bot.Module.__init__(self, *args, **kwargs)
+        self.log = logging.getLogger(self.__class__)
+        for module in self.factory.modules:
+            if isinstance(module, emu.emucontrol):
+                self.emuControl = event.module
+                self.log.debug("Hooked emu.emucontrol (init)")
+
+    @bones.event.handler(event=bones.event.BotModuleLoaded)
+    def checkForEmuModule(self, event):
+        if isinstance(event.module, emu.emucontrol):
+            self.emuControl = event.module
+            self.log.debug("Hooked emu.emucontrol (post-init)")
+
+    @bones.event.handler(event=bones.event.PrivmsgEvent)
+    def parseMessage(self, event):
+        if self.emuControl and not self.emuControl.inputDriverEnabled():
+                return
+
+        if event.msg.lower() in self.keys:
+            self.receivedKeyFromIRC(event.msg.lower())
+
+    def receivedKeyFromIRC(self, key):
+        raise NotImplementedError("Input module does not override the receivedKeyFromIRC method.")
 
 class GenericBGBInput(bones.bot.Module):
     keys = {
@@ -22,27 +60,13 @@ class GenericBGBInput(bones.bot.Module):
     }
     keyDelay = (1000/59.97)/1000
 
-    def __init__(self, *args, **kwargs):
-        bones.bot.Module.__init__(self, *args, **kwargs)
-        self.mutedUsers = {}
-        self.keyQueue = []
-
-    @bones.event.handler(event=bones.event.UserJoinEvent)
-    def voiceUser(self, event):
-        if ("%s@%s" % (event.user.username, event.user.hostname)) not in self.mutedUsers:
-            event.client.mode(event.channel.name, True, "v", user=event.user.nickname)
-
-    @bones.event.handler(event=bones.event.PrivmsgEvent)
-    def parseMessage(self, event):
-        if emu.input_override == None or emu.input_override == True:
-            if emu.input_enabled and event.msg.lower() in self.keys:
-                key = event.msg.lower()
-                PressKey(self.keys[key])
-                time.sleep(self.keyDelay)
-                ReleaseKey(self.keys[key])
-                PressKey(self.keys[key])
-                time.sleep(self.keyDelay)
-                ReleaseKey(self.keys[key])
-                self.keyQueue.append(key)
-                bones.bot.log.debug("Sent %s, %s" % (key, self.keys[key]))
-                self.keyQueue.append(event.msg.lower())
+    def receivedKeyFromIRC(self, key):
+        PressKey(self.keys[key])
+        time.sleep(self.keyDelay)
+        ReleaseKey(self.keys[key])
+        PressKey(self.keys[key])
+        time.sleep(self.keyDelay)
+        ReleaseKey(self.keys[key])
+        self.keyQueue.append(key)
+        bones.bot.log.debug("Sent %s, %s" % (key, self.keys[key]))
+        self.keyQueue.append(event.msg.lower())
