@@ -157,7 +157,7 @@ class emuset(bones.bot.Module):
     def emuset(self, event):
         global input_enabled
         if event.user.nickname in mod_admins:
-            success = True
+            success = False
             if len(event.args) > 0:
 
                 default_options = {
@@ -173,20 +173,23 @@ class emuset(bones.bot.Module):
                         newpath = path.join(emu_path, newemu)
                         if path.exists(newpath):
                             emucontrol.active_emu = [newpath, newemu]
+                            success = True
                         else:
                             event.channel.msg("Emulator does not exist, changes ignored")
-                            success = False
 
-                if event.args[0].lower() == "rom":
+                elif event.args[0].lower() == "rom":
                     if event.args[1].lower() == "reset":
                         emucontrol.active_rom = default_options["rom"]
                     else:
                         newpath = path.join(rom_path, " ".join(event.args[1:]))
                         if path.exists(newpath):
                             emucontrol.active_rom = newpath
+                            success = True
                         else:
                             event.channel.msg("ROM does not exist, changes ignored")
-                            success = False
+
+                else:
+                	event.channel.msg("Warning: Unknown Option.")
 
                 if event.args[0].lower() == "input":
                     if event.args[1].lower() == "true":
