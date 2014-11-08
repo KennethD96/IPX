@@ -19,7 +19,9 @@ class InputBase(bones.bot.Module):
         bones.bot.Module.__init__(self, *args, **kwargs)
         self.log = logging.getLogger(self.__class__)
         for module in self.factory.modules:
-            if isinstance(module, emu.emucontrol):
+            if isinstance(module, InputBase):
+                raise ValueException("You can only load one InputBase-derived module per factory")
+            elif isinstance(module, emu.emucontrol):
                 self.emuControl = event.module
                 self.log.debug("Hooked emu.emucontrol (init)")
 
