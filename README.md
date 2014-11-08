@@ -9,10 +9,21 @@ IPX
 - For `input.GenericBGBInput`: Windows
 - An emulator; We recommend [BGB][bgb]
 
-[bones]: https://github.com/404d/Bones-IRCBot
-[bgb]: http://bgb.bircd.org/
-
 ### Optional
 - [psutil][psutil] for resumed emulator-control between sessions
 
-[psutil]:https://code.google.com/p/psutil/
+### Installation
+- Copy everything from this repository to a folder named `ipx` in your [Bones IRC Bot][bones] directory.
+- Add the following lines to the `modules` section of your [Bones IRC Bot][bones] configuration:
+```
+ipx.input.GenericBGBInput
+ipx.emu.emucontrol
+ipx.emu.emuset
+```
+- Place the emulator excecutable in your `{Bones}\ipx\emulators` directory.
+- Place your ROM's in the `{Bones}\ipx\roms` directory.
+- Edit the config section of `{Bones}\ipx\emu.py` to your preference.
+
+[bones]: https://github.com/404d/Bones-IRCBot
+[bgb]: http://bgb.bircd.org/
+[psutil]:https://github.com/giampaolo/psutil
