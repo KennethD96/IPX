@@ -1,8 +1,8 @@
-IPX
+IPX (IRC Plays X)
 ===
 
-**No, not the protocol.**
-
+A module for [Bones IRC Bot][bones] allowing input to be sent from an IRC channel to a game emulator and (optionally) streamed.
+Inspired by "twitchplayspokemon" on [twitch.tv][twitch/twitchplayspokemon].
 
 ## Requirements
 - [Bones IRC Bot][bones] from the `feature/docs-and-cleanup` branch
@@ -27,3 +27,4 @@ ipx.emu.emuset
 [bones]: https://github.com/404d/Bones-IRCBot
 [bgb]: http://bgb.bircd.org/
 [psutil]:https://github.com/giampaolo/psutil
+[twitch/twitchplayspokemon]:http://www.twitch.tv/twitchplayspokemon
