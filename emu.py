@@ -161,7 +161,7 @@ class emucontrol(bones.bot.Module):
     def emudebug(self, event):
         if authUser(event):
             if self.isrunning(self.em):
-                event.channel.msg("Emulator running on PID " + self.em_pid[0])
+                event.channel.msg("Emulator running as PID " + self.em_pid[0])
             else:
                 event.channel.msg("Emulator not running")
 
@@ -203,7 +203,7 @@ class emuset(bones.bot.Module):
                             success = True
                         else:
                             event.channel.msg("ROM does not exist, changes ignored")
-                
+
                 elif event.args[0].lower() == "input":
                     success = True
                     if event.args[1].lower() in ["true", "on"]:
@@ -230,4 +230,5 @@ class emuset(bones.bot.Module):
                 event.channel.msg("Input enabled")
             elif input_enabled == True or input_enabled == None:
                 input_enabled = False
+                input_override = False
                 event.channel.msg("Input disabled")
