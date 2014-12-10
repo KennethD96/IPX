@@ -32,11 +32,11 @@ class GenericBGBInput(bones.bot.Module):
         if ("%s@%s" % (event.user.username, event.user.hostname)) not in self.mutedUsers:
             event.client.mode(event.channel.name, True, "v", user=event.user.nickname)
 
-    @bones.event.handler(event=bones.event.PrivmsgEvent)
+    @bones.event.handler(event=bones.event.ChannelMessageEvent)
     def parseMessage(self, event):
         if emu.input_override == None or emu.input_override == True:
-            if emu.input_enabled and event.msg.lower() in self.keys:
-                key = event.msg.lower()
+            key = event.message.lower()
+            if emu.input_enabled and key in self.keys:
                 PressKey(self.keys[key])
                 time.sleep(self.keyDelay)
                 ReleaseKey(self.keys[key])
@@ -45,4 +45,4 @@ class GenericBGBInput(bones.bot.Module):
                 ReleaseKey(self.keys[key])
                 self.keyQueue.append(key)
                 bones.bot.log.debug("Sent %s, %s" % (key, self.keys[key]))
-                self.keyQueue.append(event.msg.lower())
+                self.keyQueue.append(key)
