@@ -12,21 +12,26 @@ allow_all_op = True # Set this to True to allow all +o in addition to bot_admins
 check_if_op = True # Checks if everyone in bot_admins is +o.
 op_mode = "o" # Mode equivalent to OP on your network.
 
+active_rom = None
+active_emu = None
+
 ##########################################
 
 import bones.bot, bones.event, logging
 from subprocess import Popen, PIPE
 from twisted.internet import reactor
 import os.path, time, re
+import core
 
 log = logging.getLogger(__name__)
-module_path = os.path.dirname(__file__)
-emu_path = os.path.join(module_path, "emulators")
-rom_path = os.path.join(module_path, "roms")
+emu_path = os.path.join(os.getcwd(), "emulators")
+rom_path = os.path.join(os.getcwd(), "roms")
+"""
 if not os.path.exists(emu_path):
     os.mkdir(emu_path)
 if not os.path.exists(rom_path):
     os.mkdir(rom_path)
+"""
 input_enabled = False
 
 try:
@@ -36,28 +41,30 @@ try:
 except ImportError:
     psutil_available = False
 
-def authUser(event):
-    if allow_all_op or len(bot_admins) == 0:
-        if event.user.nickname in event.channel.modes[op_mode]:
-            return True
-    if event.user.nickname in bot_admins:
-        if check_if_op:
-            if event.user.nickname in event.channel.modes[op_mode]:
-                return True
-            else:
-                log.warning("User is not OP in this channel.")
-                return False
-        else:
-            return True
-    else:
-        return False
 
 class emucontrol(bones.bot.Module):
-    active_rom = os.path.join(rom_path, default_rom)
-    active_emu = [os.path.join(emu_path, default_emu), default_emu]
+    def __init__(self, **args):
+        global input_enabled, default_emu, default_rom, load_at_startup, input_override, bot_admins, allow_all_op, check_if_op, op_mode, emu_path, rom_path, active_rom, active_emu
+        bones.bot.Module.__init__(self, **args)
 
-    def __init__(self, *args, **kwargs):
-        bones.bot.Module.__init__(self, *args, **kwargs)
+        self._core = None
+        for module in self.factory.modules:
+            if isinstance(module, core.IPXCore):
+                self._core = module
+        if not self._core:
+            raise ValueError("IPX.core.IPXCore needs to be loaded before any other IPX module")
+
+        bot_admins = self._core._admins
+        default_emu = self._core.config("emulators", "default")
+        default_rom = self._core.config("roms", "default")
+        load_at_startup = bool(self._core.config("emulators", "load_at_startup"))
+        input_override = bool(self._core.config("emulators", "input_override", default=True))
+        emu_path = self._core.config("emulators", "path", default=emu_path)
+        rom_path = self._core.config("roms", "path", default=rom_path)
+
+        self.active_rom = os.path.join(rom_path, default_rom)
+        self.active_emu = [os.path.join(emu_path, default_emu), default_emu]
+
         self.pid_file = os.path.join(emu_path, "running.pid")
         self.em_pid = []
         self.em = None
@@ -113,7 +120,7 @@ class emucontrol(bones.bot.Module):
 
     @bones.event.handler(trigger="emustart")
     def cmdemustart(self, event):
-        if authUser(event):
+        if self._core.authUser(event):
             rom = self.active_rom
             if len(event.args) > 0:
                 newpath = os.path.join(rom_path, " ".join(event.args))
@@ -139,7 +146,7 @@ class emucontrol(bones.bot.Module):
 
     @bones.event.handler(trigger="emurestart")
     def emurestart(self, event):
-        if authUser(event):
+        if self._core.authUser(event):
             try:
                 self.emustart(self.active_emu, self.active_rom)
                 event.channel.msg("Emulator restarted")
@@ -149,7 +156,7 @@ class emucontrol(bones.bot.Module):
     @bones.event.handler(trigger="emustop")
     def emustop(self, event):
         global input_enabled
-        if authUser(event):
+        if self._core.authUser(event):
             if self.isrunning(self.em):
                 self.killemu(self.em)
                 event.channel.msg("Emulator killed")
@@ -159,7 +166,7 @@ class emucontrol(bones.bot.Module):
 
     @bones.event.handler(trigger="emudebug")
     def emudebug(self, event):
-        if authUser(event):
+        if self._core.authUser(event):
             if self.isrunning(self.em):
                 event.channel.msg("Emulator running as PID " + self.em_pid[0])
             else:
@@ -176,7 +183,7 @@ class emuset(bones.bot.Module):
     @bones.event.handler(trigger="emuset")
     def emuset(self, event):
         global input_enabled
-        if authUser(event):
+        if self._core.authUser(event):
             success = False
             if len(event.args) > 0:
 
@@ -227,7 +234,7 @@ class emuset(bones.bot.Module):
     @bones.event.handler(trigger="toggleinput")
     def toggleinput(self, event):
         global input_enabled, input_override
-        if authUser(event):
+        if self._core.authUser(event):
             if input_enabled == False or input_override == False:
                 input_enabled = True
                 input_override = None
