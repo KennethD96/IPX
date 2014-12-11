@@ -22,13 +22,13 @@ class InputBase(bones.bot.Module):
         for module in self.factory.modules:
             if isinstance(module, InputBase):
                 raise ValueError("You can only load one InputBase-derived module per factory")
-            elif isinstance(module, emu.emucontrol):
+            elif isinstance(module, emu.EmuControl):
                 self.emuControl = module
                 self.log.debug("Hooked emu.emucontrol (init)")
 
     @bones.event.handler(event=bones.event.BotModuleLoaded)
     def checkForEmuModule(self, event):
-        if isinstance(event.module, emu.emucontrol):
+        if isinstance(event.module, emu.EmuControl):
             self.emuControl = event.module
             self.log.debug("Hooked emu.emucontrol (post-init)")
 
