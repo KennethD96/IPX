@@ -31,16 +31,18 @@ class InputBase(bones.bot.Module):
             self.emuControl = event.module
             self.log.debug("Hooked emu.emucontrol (post-init)")
 
-    @bones.event.handler(event=bones.event.PrivmsgEvent)
+    @bones.event.handler(event=bones.event.ChannelMessageEvent)
     def parseMessage(self, event):
         if self.emuControl and not self.emuControl.inputDriverEnabled():
                 return
 
-        if event.msg.lower() in self.keys:
-            self.receivedKeyFromIRC(event.msg.lower())
+        key = event.message.lower()
+        if key in self.keys:
+            self.receivedKeyFromIRC(key)
 
     def receivedKeyFromIRC(self, key):
         raise NotImplementedError("Input module does not override the receivedKeyFromIRC method.")
+
 
 class GenericBGBInput(bones.bot.Module):
     keys = {
