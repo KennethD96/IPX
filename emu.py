@@ -8,7 +8,7 @@ load_at_startup = True # Start emulator automatically with bot.
 input_override = None # Set this to False to disable input on startup (toggleinput will set this to None).
 
 bot_admins = [] # Will allow everyone with +o mode.
-allow_all_op = False # Set this to True to allow all +o in addition to bot_admins.
+allow_all_op = True # Set this to True to allow all +o in addition to bot_admins.
 check_if_op = True # Checks if everyone in bot_admins is +o.
 op_mode = "o" # Mode equivalent to OP on your network.
 
@@ -167,6 +167,7 @@ class emucontrol(bones.bot.Module):
 
     def inputDriverEnabled(self):
         return (input_override == None or input_override == True) and input_enabled
+
 
 class emuset(bones.bot.Module):
     def __init__(self, *args, **kwargs):
