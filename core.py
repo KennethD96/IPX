@@ -34,7 +34,6 @@ class IPXCore(bones.bot.Module):
         self._allow_all_ops = bool(self.config("auth", "allow_all_ops", default=True))
         self._op_mode = self.config("auth", "op_mode", default="o")
         self._require_op = bool(self.config("auth", "require_op", default=False))
-        print self.__dict__
 
     def config(self, section, option, default=None):
         if not self._config.has_section(section):
