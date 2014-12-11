@@ -16,18 +16,6 @@ except ImportError:
 
 
 class EmuControl(bones.bot.Module):
-    active_rom = None
-    active_emu = None
-
-    _load_at_startup = None
-    _input_override = None
-    _input_enabled = None
-    _default_emu = None
-    _default_rom = None
-
-    _emu_path = None
-    _rom_path = None
-
     _core = None
 
     def __init__(self, **args):
@@ -40,18 +28,17 @@ class EmuControl(bones.bot.Module):
         if not self._core:
             raise ValueError("IPX.core.IPXCore needs to be loaded before any other IPX module")
 
-        cls = self.__class__
-        cls._default_emu = self._core.config("emulators", "default")
-        cls._default_rom = self._core.config("roms", "default")
-        cls._load_at_startup = bool(self._core.config("emulators", "load_at_startup"))
-        cls._input_override = bool(self._core.config("emulators", "input_override", default=True))
-        cls._emu_path = self._core.config("emulators", "path")
-        cls._rom_path = self._core.config("roms", "path")
+        self._core._["default_emu"] = self._core.config("emulators", "default")
+        self._core._["default_rom"] = self._core.config("roms", "default")
+        self._core._["load_at_startup"] = bool(self._core.config("emulators", "load_at_startup"))
+        self._core._["input_override"] = bool(self._core.config("emulators", "input_override", default=True))
+        self._core._["emu_path"] = self._core.config("emulators", "path")
+        self._core._["rom_path"] = self._core.config("roms", "path")
 
-        cls.active_rom = os.path.join(self._rom_path, self._default_rom)
-        cls.active_emu = [os.path.join(self._emu_path, self._default_emu), self._default_emu]
+        self._core._["active_rom"] = os.path.join(self._core._["rom_path"], self._core._["default_rom"])
+        self._core._["active_emu"] = [os.path.join(self._core._["emu_path"], self._core._["default_emu"]), self._core._["default_emu"]]
 
-        self.pid_file = os.path.join(self._emu_path, "running.pid")
+        self.pid_file = os.path.join(self._core._["emu_path"], "running.pid")
         self.em_pid = []
         self.em = None
 
@@ -67,13 +54,13 @@ class EmuControl(bones.bot.Module):
                         self.em_pid = []
                         self.em = None
 
-        if self._load_at_startup and not self.isrunning(self.em):
+        if self._core._["load_at_startup"] and not self.isrunning(self.em):
             try:
-                self.emustart(self.active_emu, self.active_rom)
+                self.emustart(self._core._["active_emu"], self._core._["active_rom"])
             except WindowsError:
                 log.warning("Could not find emulator executable!")
-        if self._load_at_startup and self.isrunning(self.em):
-            cls._input_enabled = True
+        if self._core._["load_at_startup"] and self.isrunning(self.em):
+            self._core._["input_enabled"] = True
 
     def emustart(self, emu, rom):
         if self.isrunning(self.em):
@@ -87,11 +74,11 @@ class EmuControl(bones.bot.Module):
 
         with open(self.pid_file, "w") as pidfile:
             pidfile.write("\n".join(self.em_pid))
-        self.__class__._input_enabled = True
+        self._core._["input_enabled"] = True
 
     def killemu(self, proc):
         proc.terminate()
-        self.__class__._input_enabled = False
+        self._core._["input_enabled"] = False
 
     def isrunning(self, proc):
         try:
@@ -105,13 +92,13 @@ class EmuControl(bones.bot.Module):
     @bones.event.handler(trigger="emustart")
     def cmdemustart(self, event):
         if self._core.authUser(event):
-            rom = self.active_rom
+            rom = self._core._["active_rom"]
             if len(event.args) > 0:
-                newpath = os.path.join(self._rom_path, " ".join(event.args))
+                newpath = os.path.join(self._core._["rom_path"], " ".join(event.args))
                 rom = newpath
                 if os.path.exists(newpath):
                     try:
-                        self.emustart(self.active_emu, rom)
+                        self.emustart(self._core._["active_emu"], rom)
                         event.channel.msg("Emulator loaded with ROM '%s'" %
                         " ".join(event.args))
                     except WindowsError:
@@ -121,7 +108,7 @@ class EmuControl(bones.bot.Module):
             else:
                 if not self.isrunning(self.em):
                     try:
-                        self.emustart(self.active_emu, rom)
+                        self.emustart(self._core._["active_emu"], rom)
                         event.channel.msg("Emulator initiated")
                     except:
                         event.channel.msg("Could not load emulator")
@@ -132,7 +119,7 @@ class EmuControl(bones.bot.Module):
     def emurestart(self, event):
         if self._core.authUser(event):
             try:
-                self.emustart(self.active_emu, self.active_rom)
+                self.emustart(self._core._["active_emu"], self._core._["active_rom"])
                 event.channel.msg("Emulator restarted")
             except WindowsError:
                 event.channel.msg("Could not restart emulator")
@@ -145,7 +132,7 @@ class EmuControl(bones.bot.Module):
                 event.channel.msg("Emulator killed")
             else:
                 event.channel.msg("Emulator not running")
-                self.__class__._input_enabled = False
+                self._core._["input_enabled"] = False
 
     @bones.event.handler(trigger="emudebug")
     def emudebug(self, event):
@@ -156,7 +143,7 @@ class EmuControl(bones.bot.Module):
                 event.channel.msg("Emulator not running")
 
     def inputDriverEnabled(self):
-        return (self._input_override == None or self._input_override == True) and self._input_enabled
+        return (self._core._["input_override"] == None or self._core._["input_override"] == True) and self._core._["input_enabled"]
 
 
 class EmuSet(bones.bot.Module):
@@ -179,29 +166,29 @@ class EmuSet(bones.bot.Module):
             if len(event.args) > 0:
 
                 default_options = {
-                    "emu":[os.path.join(EmuControl._emu_path, EmuControl._default_emu), EmuControl._default_emu],
-                    "rom":os.path.join(EmuControl._rom_path, EmuControl._default_rom),
+                    "emu":[os.path.join(self._core._["emu_path"], self._core._["default_emu"]), self._core._["default_emu"]],
+                    "rom":os.path.join(self._core._["rom_path"], self._core._["default_rom"]),
                 }
 
                 if event.args[0].lower() == "emu":
                     if event.args[1].lower() == "reset":
-                        EmuControl.active_emu = default_options["emu"]
+                        self._core._["active_emu"] = default_options["emu"]
                     else:
                         newemu = " ".join(event.args[1:])
-                        newpath = os.path.join(EmuControl._emu_path, newemu)
+                        newpath = os.path.join(self._core._["emu_path"], newemu)
                         if os.path.exists(newpath):
-                            EmuControl.active_emu = [newpath, newemu]
+                            self._core._["active_emu"] = [newpath, newemu]
                             success = True
                         else:
                             event.channel.msg("Emulator does not exist, changes ignored")
 
                 elif event.args[0].lower() == "rom":
                     if event.args[1].lower() == "reset":
-                        EmuControl.active_rom = default_options["rom"]
+                        self._core._["active_rom"] = default_options["rom"]
                     else:
-                        newpath = os.path.join(EmuControl._rom_path, " ".join(event.args[1:]))
+                        newpath = os.path.join(self._core._["rom_path"], " ".join(event.args[1:]))
                         if os.path.exists(newpath):
-                            EmuControl.active_rom = newpath
+                            self._core._["active_rom"] = newpath
                             success = True
                         else:
                             event.channel.msg("ROM does not exist, changes ignored")
@@ -209,9 +196,9 @@ class EmuSet(bones.bot.Module):
                 elif event.args[0].lower() == "input":
                     success = True
                     if event.args[1].lower() in ["true", "on"]:
-                        EmuControl._input_enabled = True
+                        self._core._["input_enabled"] = True
                     elif event.args[1].lower() in ["false", "off"]:
-                        EmuControl._input_enabled = False
+                        self._core._["input_enabled"] = False
                     else:
                         event.channel.msg("Must be \"On\" or \"Off\"")
                         success = False
@@ -225,11 +212,11 @@ class EmuSet(bones.bot.Module):
     @bones.event.handler(trigger="toggleinput")
     def toggleinput(self, event):
         if self._core.authUser(event):
-            if EmuControl._input_enabled == False or EmuControl._input_override == False:
-                EmuControl._input_enabled = True
-                EmuControl._input_override = None
+            if self._core._["input_enabled"] == False or self._core._["input_override"] == False:
+                self._core._["input_enabled"] = True
+                self._core._["input_override"] = None
                 event.channel.msg("Input enabled")
-            elif EmuControl._input_enabled == True or EmuControl._input_enabled == None:
-                EmuControl._input_enabled = False
-                EmuControl._input_override = False
+            elif self._core._["input_enabled"] == True or self._core._["input_enabled"] == None:
+                self._core._["input_enabled"] = False
+                self._core._["input_override"] = False
                 event.channel.msg("Input disabled")
