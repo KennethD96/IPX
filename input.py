@@ -12,17 +12,18 @@ import emu
 
 
 class InputBase(bones.bot.Module):
-    keys = {}
+    keys = {"a":None}
     keyDelay = 0
 
     def __init__(self, *args, **kwargs):
         bones.bot.Module.__init__(self, *args, **kwargs)
-        self.log = logging.getLogger(self.__class__)
+        self.emuControl = None
+        self.log = logging.getLogger(__name__+"."+self.__class__.__name__)
         for module in self.factory.modules:
             if isinstance(module, InputBase):
-                raise ValueException("You can only load one InputBase-derived module per factory")
+                raise ValueError("You can only load one InputBase-derived module per factory")
             elif isinstance(module, emu.emucontrol):
-                self.emuControl = event.module
+                self.emuControl = module
                 self.log.debug("Hooked emu.emucontrol (init)")
 
     @bones.event.handler(event=bones.event.BotModuleLoaded)
@@ -34,7 +35,7 @@ class InputBase(bones.bot.Module):
     @bones.event.handler(event=bones.event.ChannelMessageEvent)
     def parseMessage(self, event):
         if self.emuControl and not self.emuControl.inputDriverEnabled():
-                return
+            return
 
         key = event.message.lower()
         if key in self.keys:
@@ -44,7 +45,7 @@ class InputBase(bones.bot.Module):
         raise NotImplementedError("Input module does not override the receivedKeyFromIRC method.")
 
 
-class GenericBGBInput(bones.bot.Module):
+class GenericBGBInput(InputBase):
     keys = {
         "down": 0x28,
         "right": 0x27,
@@ -57,7 +58,16 @@ class GenericBGBInput(bones.bot.Module):
     }
     keyDelay = (1000/59.97)/1000
 
+    @bones.event.handler(event=bones.event.BotModuleLoaded)
+    def checkForEmuModule(self, event):
+        InputBase.checkForEmuModule(self, event)
+
+    @bones.event.handler(event=bones.event.ChannelMessageEvent)
+    def parseMessage(self, event):
+        InputBase.parseMessage(self, event)
+
     def receivedKeyFromIRC(self, key):
+        print bones.event.eventHandlers
         PressKey(self.keys[key])
         time.sleep(self.keyDelay)
         ReleaseKey(self.keys[key])
