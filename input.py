@@ -67,7 +67,6 @@ class GenericBGBInput(InputBase):
         InputBase.parseMessage(self, event)
 
     def receivedKeyFromIRC(self, key):
-        print bones.event.eventHandlers
         PressKey(self.keys[key])
         time.sleep(self.keyDelay)
         ReleaseKey(self.keys[key])
