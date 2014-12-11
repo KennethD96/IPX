@@ -60,9 +60,6 @@ class GenericBGBInput(InputBase):
 
     def receivedKeyFromIRC(self, key):
         PressKey(self.keys[key])
-        time.sleep(self.keyDelay)
-        ReleaseKey(self.keys[key])
-        PressKey(self.keys[key])
-        time.sleep(self.keyDelay)
+        time.sleep(self.keyDelay*2)
         ReleaseKey(self.keys[key])
         self.log.debug("Sent %s, %s" % (key, self.keys[key]))
