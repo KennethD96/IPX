@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 from __future__ import division
 
+import logging
 import time
 
 import bones.bot
@@ -9,7 +10,42 @@ import bones.event
 from keys import PressKey, ReleaseKey
 import emu
 
-class GenericBGBInput(bones.bot.Module):
+
+class InputBase(bones.bot.Module):
+    keys = {"a":None}
+    keyDelay = 0
+
+    def __init__(self, *args, **kwargs):
+        bones.bot.Module.__init__(self, *args, **kwargs)
+        self.emuControl = None
+        self.log = logging.getLogger(__name__+"."+self.__class__.__name__)
+        for module in self.factory.modules:
+            if isinstance(module, InputBase):
+                raise ValueError("You can only load one InputBase-derived module per factory")
+            elif isinstance(module, emu.emucontrol):
+                self.emuControl = module
+                self.log.debug("Hooked emu.emucontrol (init)")
+
+    @bones.event.handler(event=bones.event.BotModuleLoaded)
+    def checkForEmuModule(self, event):
+        if isinstance(event.module, emu.emucontrol):
+            self.emuControl = event.module
+            self.log.debug("Hooked emu.emucontrol (post-init)")
+
+    @bones.event.handler(event=bones.event.ChannelMessageEvent)
+    def parseMessage(self, event):
+        if self.emuControl and not self.emuControl.inputDriverEnabled():
+            return
+
+        key = event.message.lower()
+        if key in self.keys:
+            self.receivedKeyFromIRC(key)
+
+    def receivedKeyFromIRC(self, key):
+        raise NotImplementedError("Input module does not override the receivedKeyFromIRC method.")
+
+
+class GenericBGBInput(InputBase):
     keys = {
         "down": 0x28,
         "right": 0x27,
@@ -22,27 +58,19 @@ class GenericBGBInput(bones.bot.Module):
     }
     keyDelay = (1000/59.97)/1000
 
-    def __init__(self, *args, **kwargs):
-        bones.bot.Module.__init__(self, *args, **kwargs)
-        self.mutedUsers = {}
-        self.keyQueue = []
-
-    @bones.event.handler(event=bones.event.UserJoinEvent)
-    def voiceUser(self, event):
-        if ("%s@%s" % (event.user.username, event.user.hostname)) not in self.mutedUsers:
-            event.client.mode(event.channel.name, True, "v", user=event.user.nickname)
+    @bones.event.handler(event=bones.event.BotModuleLoaded)
+    def checkForEmuModule(self, event):
+        InputBase.checkForEmuModule(self, event)
 
     @bones.event.handler(event=bones.event.ChannelMessageEvent)
     def parseMessage(self, event):
-        if emu.input_override == None or emu.input_override == True:
-            key = event.message.lower()
-            if emu.input_enabled and key in self.keys:
-                PressKey(self.keys[key])
-                time.sleep(self.keyDelay)
-                ReleaseKey(self.keys[key])
-                PressKey(self.keys[key])
-                time.sleep(self.keyDelay)
-                ReleaseKey(self.keys[key])
-                self.keyQueue.append(key)
-                bones.bot.log.debug("Sent %s, %s" % (key, self.keys[key]))
-                self.keyQueue.append(key)
+        InputBase.parseMessage(self, event)
+
+    def receivedKeyFromIRC(self, key):
+        PressKey(self.keys[key])
+        time.sleep(self.keyDelay)
+        ReleaseKey(self.keys[key])
+        PressKey(self.keys[key])
+        time.sleep(self.keyDelay)
+        ReleaseKey(self.keys[key])
+        self.log.debug("Sent %s, %s" % (key, self.keys[key]))

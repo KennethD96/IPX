@@ -165,6 +165,9 @@ class emucontrol(bones.bot.Module):
             else:
                 event.channel.msg("Emulator not running")
 
+    def inputDriverEnabled(self):
+        return (input_override == None or input_override == True) and input_enabled
+
 class emuset(bones.bot.Module):
     def __init__(self, *args, **kwargs):
         bones.bot.Module.__init__(self, *args, **kwargs)
