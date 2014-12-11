@@ -12,7 +12,7 @@ import emu
 
 
 class InputBase(bones.bot.Module):
-    keys = {"a":None}
+    keys = {}
     keyDelay = 0
 
     def __init__(self, *args, **kwargs):
@@ -57,14 +57,6 @@ class GenericBGBInput(InputBase):
         "select": 0x08,
     }
     keyDelay = (1000/59.97)/1000
-
-    @bones.event.handler(event=bones.event.BotModuleLoaded)
-    def checkForEmuModule(self, event):
-        InputBase.checkForEmuModule(self, event)
-
-    @bones.event.handler(event=bones.event.ChannelMessageEvent)
-    def parseMessage(self, event):
-        InputBase.parseMessage(self, event)
 
     def receivedKeyFromIRC(self, key):
         PressKey(self.keys[key])
